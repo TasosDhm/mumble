@@ -82,6 +82,9 @@ Global::Global() {
 	iAudioBandwidth = -1;
 	iMaxBandwidth = -1;
 
+    qslEmoticonNames = QStringList();
+    qslEmoticonImages = QStringList();
+
 	iCodecAlpha = 0;
 	iCodecBeta = 0;
 	bPreferAlpha = true;

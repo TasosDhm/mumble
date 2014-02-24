@@ -80,6 +80,12 @@ QString TextMessage::autoFormat(QString qsPlain) {
 			}
 		}
 	} while (idx >= 0);
+	
+	for (int i=0; i<g.qslEmoticonNames.size() ; i++) {
+	    qr.setPattern(QLatin1String("\\b")+g.qslEmoticonNames.at(i)+QLatin1String("\\b"));
+	    qsPlain.replace(qr, QLatin1String("<img src=\"")+g.qslEmoticonImages.at(i)+QLatin1String("\">"));
+	}
+
 	return qsPlain;
 }
 

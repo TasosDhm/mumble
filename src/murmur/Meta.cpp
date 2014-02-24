@@ -58,6 +58,8 @@ MetaParams::MetaParams() {
 	iDefaultChan = 0;
 	bRememberChan = true;
 	qsWelcomeText = QString("Welcome to this server");
+	qsEmoticonNames = QString();
+	qsEmoticonImages = QString();
 	qsDatabase = QString();
 	iDBPort = 0;
 	qsDBusService = "net.sourceforge.mumble.murmur";
@@ -268,6 +270,8 @@ void MetaParams::read(QString fname) {
 	iMaxUsers = typeCheckedFromSettings("users", iMaxUsers);
 	iMaxUsersPerChannel = typeCheckedFromSettings("usersperchannel", iMaxUsersPerChannel);
 	qsWelcomeText = typeCheckedFromSettings("welcometext", qsWelcomeText);
+	qsEmoticonNames = typeCheckedFromSettings("emoticonnames", qsEmoticonNames);
+	qsEmoticonImages = typeCheckedFromSettings("emoticonimages", qsEmoticonImages);
 	bCertRequired = typeCheckedFromSettings("certrequired", bCertRequired);
 
 	qsDatabase = typeCheckedFromSettings("database", qsDatabase);
@@ -462,6 +466,8 @@ void MetaParams::read(QString fname) {
 	qmConfig.insert(QLatin1String("defaultchannel"),QString::number(iDefaultChan));
 	qmConfig.insert(QLatin1String("rememberchannel"),bRememberChan ? QLatin1String("true") : QLatin1String("false"));
 	qmConfig.insert(QLatin1String("welcometext"),qsWelcomeText);
+	qmConfig.insert(QLatin1String("emoticonnames"),qsEmoticonNames);
+	qmConfig.insert(QLatin1String("emoticonimages"),qsEmoticonImages);
 	qmConfig.insert(QLatin1String("registername"),qsRegName);
 	qmConfig.insert(QLatin1String("registerpassword"),qsRegPassword);
 	qmConfig.insert(QLatin1String("registerhostname"),qsRegHost);

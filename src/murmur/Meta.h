@@ -66,6 +66,8 @@ public:
 	bool bAllowHTML;
 	QString qsPassword;
 	QString qsWelcomeText;
+	QString qsEmoticonNames;
+	QString qsEmoticonImages;
 	bool bCertRequired;
 
 	int iBanTries;

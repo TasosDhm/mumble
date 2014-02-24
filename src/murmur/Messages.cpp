@@ -375,6 +375,10 @@ void Server::msgAuthenticate(ServerUser *uSource, MumbleProto::Authenticate &msg
 	if (! qsWelcomeText.isEmpty())
 		mpss.set_welcome_text(u8(qsWelcomeText));
 	mpss.set_max_bandwidth(iMaxBandwidth);
+	if (! qsEmoticonNames.isEmpty())
+	    mpss.set_emoticon_names(u8(qsEmoticonNames));
+	if (! qsEmoticonImages.isEmpty())
+	    mpss.set_emoticon_images(u8(qsEmoticonImages));
 
 	if (uSource->iId == 0) {
 		mpss.set_permissions(ChanACL::All);

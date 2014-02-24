@@ -106,6 +106,9 @@ public:
 	bool bQuit;
 	QString qsCurrentStyle;
 
+    QStringList qslEmoticonNames;
+    QStringList qslEmoticonImages;
+
 	bool bHappyEaster;
 	static const char ccHappyEaster[];
 

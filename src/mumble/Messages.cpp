@@ -124,6 +124,9 @@ void MainWindow::msgServerSync(const MumbleProto::ServerSync &msg) {
 	pmModel->ensureSelfVisible();
 	pmModel->recheckLinks();
 
+	g.qslEmoticonNames = u8(msg.emoticon_names()).split(QLatin1String(", "), QString::SkipEmptyParts);
+	g.qslEmoticonImages = u8(msg.emoticon_images()).split(QLatin1String(", "), QString::SkipEmptyParts);
+
 	qmTargetUse.clear();
 	qmTargets.clear();
 	for (int i=1;i<6;++i) {
@@ -180,6 +183,10 @@ void MainWindow::msgServerConfig(const MumbleProto::ServerConfig &msg) {
 		g.uiMessageLength = msg.message_length();
 	if (msg.has_image_message_length())
 		g.uiImageLength = msg.image_message_length();
+	if (msg.has_emoticon_names())
+	    g.qslEmoticonNames = u8(msg.emoticon_names()).split(QLatin1String(", "), QString::SkipEmptyParts);
+	if (msg.has_emoticon_images())
+	    g.qslEmoticonImages = u8(msg.emoticon_images()).split(QLatin1String("," ), QString::SkipEmptyParts);
 }
 
 void MainWindow::msgPermissionDenied(const MumbleProto::PermissionDenied &msg) {

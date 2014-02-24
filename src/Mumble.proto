@@ -57,6 +57,8 @@ message ServerConfig {
 	optional bool allow_html = 3;
 	optional uint32 message_length = 4;
 	optional uint32 image_message_length = 5;
+	optional string emoticon_names = 6;
+	optional string emoticon_images = 7;
 }
 
 message ServerSync {
@@ -64,6 +66,8 @@ message ServerSync {
 	optional uint32 max_bandwidth = 2;
 	optional string welcome_text = 3;
 	optional uint64 permissions = 4;
+	optional string emoticon_names = 5;
+	optional string emoticon_images = 6;
 }
 
 message ChannelRemove {

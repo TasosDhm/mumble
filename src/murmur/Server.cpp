@@ -320,6 +320,8 @@ void Server::readParams() {
 	iDefaultChan = Meta::mp.iDefaultChan;
 	bRememberChan = Meta::mp.bRememberChan;
 	qsWelcomeText = Meta::mp.qsWelcomeText;
+	qsEmoticonNames = Meta::mp.qsEmoticonNames;
+	qsEmoticonImages = Meta::mp.qsEmoticonImages;
 	qlBind = Meta::mp.qlBind;
 	qsRegName = Meta::mp.qsRegName;
 	qsRegPassword = Meta::mp.qsRegPassword;
@@ -376,6 +378,8 @@ void Server::readParams() {
 	iDefaultChan = getConf("defaultchannel", iDefaultChan).toInt();
 	bRememberChan = getConf("rememberchannel", bRememberChan).toBool();
 	qsWelcomeText = getConf("welcometext", qsWelcomeText).toString();
+    qsEmoticonNames = getConf("emoticonnames", qsEmoticonNames).toString();
+    qsEmoticonImages = getConf("emoticonimages", qsEmoticonImages).toString();
 
 	qsRegName = getConf("registername", qsRegName).toString();
 	qsRegPassword = getConf("registerpassword", qsRegPassword).toString();
@@ -471,6 +475,26 @@ void Server::setLiveConf(const QString &key, const QString &value) {
 				sendAll(mpsc);
 			}
 		}
+	} else if (key == "emoticonnames") {
+	    QString text = !v.isNull() ? v : Meta::mp.qsEmoticonNames;
+	    if (text != qsEmoticonNames) {
+	        qsEmoticonNames = text;
+	        if (! qsEmoticonNames.isEmpty()) {
+	            MumbleProto::ServerConfig mpsc;
+	            mpsc.set_emoticon_names(u8(qsEmoticonNames));
+	            sendAll(mpsc);
+	        }
+	    }
+	} else if (key == "emoticonimages") {
+	    QString text = !v.isNull() ? v : Meta::mp.qsEmoticonImages;
+		if (text != qsEmoticonImages) {
+	        qsEmoticonImages = text;
+	        if (! qsEmoticonImages.isEmpty()) {
+	            MumbleProto::ServerConfig mpsc;
+	            mpsc.set_emoticon_images(u8(qsEmoticonImages));
+	            sendAll(mpsc);
+	        }
+	    }
 	} else if (key == "registername") {
 		QString text = !v.isNull() ? v : Meta::mp.qsRegName;
 		if (text != qsRegName) {
