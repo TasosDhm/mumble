@@ -30,7 +30,7 @@
 */
 
 #include "mumble_pch.hpp"
-
+#include "Global.h"
 #include "TextMessage.h"
 
 TextMessage::TextMessage(QWidget *p, QString title, bool bChannel) : QDialog(p) {
