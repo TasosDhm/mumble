@@ -48,6 +48,20 @@ win32 {
 		QMAKE_CFLAGS_RELEASE *= -Ox -Ot /fp:fast /Qfast_transcendentals -Ob2
 		QMAKE_CXXFLAGS_RELEASE *= -Ox -Ot /fp:fast /Qfast_transcendentals -Ob2
 		QMAKE_LFLAGS_RELEASE *= /SafeSEH /NXCOMPAT /DYNAMICBASE
+
+		# MSVS 2012 and 2013's cl.exe will generate SSE2 code by default,
+		# unless an explict arch is set.
+		win32-msvc2012|win32-msvc2013 {
+			QMAKE_CFLAGS_RELEASE *= -arch:SSE
+			QMAKE_CXXFLAGS_RELEASE *= -arch:SSE
+		}
+
+		QMAKE_LFLAGS_CONSOLE -= /SUBSYSTEM:CONSOLE
+		QMAKE_LFLAGS_CONSOLE += /SUBSYSTEM:CONSOLE,5.01
+
+		QMAKE_LFLAGS_WINDOWS -= /SUBSYSTEM:WINDOWS
+		QMAKE_LFLAGS_WINDOWS += /SUBSYSTEM:WINDOWS,5.01
+
 		CONFIG(analyze) {
 			QMAKE_CFLAGS_DEBUG *= /analyze
 			QMAKE_CXXFLAGS_DEBUG *= /analyze

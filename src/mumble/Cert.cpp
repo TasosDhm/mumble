@@ -54,6 +54,7 @@ CertView::CertView(QWidget *p) : QGroupBox(p) {
 	grid->addWidget(l, 0, 0, 1, 1, Qt::AlignLeft);
 
 	qlSubjectName = new QLabel();
+	qlSubjectName->setTextFormat(Qt::PlainText);
 	qlSubjectName->setWordWrap(true);
 	grid->addWidget(qlSubjectName, 0, 1, 1, 1);
 
@@ -61,6 +62,7 @@ CertView::CertView(QWidget *p) : QGroupBox(p) {
 	grid->addWidget(l, 1, 0, 1, 1, Qt::AlignLeft);
 
 	qlSubjectEmail = new QLabel();
+	qlSubjectEmail->setTextFormat(Qt::PlainText);
 	qlSubjectEmail->setWordWrap(true);
 	grid->addWidget(qlSubjectEmail, 1, 1, 1, 1);
 
@@ -68,6 +70,7 @@ CertView::CertView(QWidget *p) : QGroupBox(p) {
 	grid->addWidget(l, 2, 0, 1, 1, Qt::AlignLeft);
 
 	qlIssuerName = new QLabel();
+	qlIssuerName->setTextFormat(Qt::PlainText);
 	qlIssuerName->setWordWrap(true);
 	grid->addWidget(qlIssuerName, 2, 1, 1, 1);
 
@@ -112,12 +115,12 @@ void CertView::setCert(const QList<QSslCertificate> &cert) {
 		qlSubjectName->setText(tmpName);
 
 		if (emails.count() > 0)
-			qlSubjectEmail->setText(emails.join(QLatin1String("<br />")));
+			qlSubjectEmail->setText(emails.join(QLatin1String("\n")));
 		else
 			qlSubjectEmail->setText(tr("(none)"));
 
 		if (qscCert.expiryDate() <= QDateTime::currentDateTime())
-			qlExpiry->setText(QString::fromLatin1("<font color=\"red\"><b>%1</b></font>").arg(qscCert.expiryDate().toString(Qt::SystemLocaleDate)));
+			qlExpiry->setText(QString::fromLatin1("<font color=\"red\"><b>%1</b></font>").arg(Qt::escape(qscCert.expiryDate().toString(Qt::SystemLocaleDate))));
 		else
 			qlExpiry->setText(qscCert.expiryDate().toString(Qt::SystemLocaleDate));
 
@@ -141,9 +144,6 @@ CertWizard::CertWizard(QWidget *p) : QWizard(p) {
 	setupUi(this);
 
 	setOption(QWizard::NoCancelButton, false);
-
-	bValidDomain = true;
-	bPendingDns = false;
 
 	qwpExport->setCommitPage(true);
 	qwpExport->setComplete(false);
@@ -218,24 +218,14 @@ void CertWizard::initializePage(int id) {
 
 bool CertWizard::validateCurrentPage() {
 	if (currentPage() == qwpNew) {
-		if (! bValidDomain) {
-			QRegExp ereg(QLatin1String("(.+)@(.+)"), Qt::CaseInsensitive, QRegExp::RegExp2);
-			if (ereg.exactMatch(qleEmail->text())) {
-				const QString &domain = ereg.cap(2);
-				if (! domain.isEmpty()) {
-					qlError->setText(tr("Resolving domain %1.").arg(domain));
-					bPendingDns = true;
-					iLookupId = QHostInfo::lookupHost(domain, this, SLOT(lookedUp(QHostInfo)));
-				} else
-					bValidDomain = true;
-			} else
-				qlError->setText(tr("Unable to validate email.<br />Enter a valid (or blank) email to continue."));
-			if (! bValidDomain) {
-				qwpNew->setComplete(false);
-				return false;
-			}
+		QRegExp ereg(QLatin1String("(^$)|((.+)@(.+))"), Qt::CaseInsensitive, QRegExp::RegExp2);
+		if (!ereg.exactMatch(qleEmail->text())) {
+			qlError->setText(tr("Unable to validate email.<br />Enter a valid (or blank) email to continue."));
+			qwpNew->setComplete(false);
+			return false;
 		} else {
 			kpNew = generateNewCert(qleName->text(), qleEmail->text());
+			
 			if (! validateCert(kpNew)) {
 				qlError->setText(tr("There was an error generating your certificate.<br />Please try again."));
 				return false;
@@ -285,13 +275,7 @@ bool CertWizard::validateCurrentPage() {
 	return QWizard::validateCurrentPage();
 }
 
-void CertWizard::on_qleEmail_textChanged(const QString &email) {
-	bValidDomain = email.isEmpty();
-	if (bPendingDns) {
-		qlError->setText(QString());
-		QHostInfo::abortHostLookup(iLookupId);
-		bPendingDns = false;
-	}
+void CertWizard::on_qleEmail_textChanged(const QString &) {
 	qwpNew->setComplete(true);
 }
 
@@ -379,20 +363,6 @@ void CertWizard::on_qlePassword_textChanged(const QString &) {
 
 void CertWizard::on_qlIntroText_linkActivated(const QString &url) {
 	QDesktopServices::openUrl(QUrl(url));
-}
-
-void CertWizard::lookedUp(QHostInfo info) {
-	bPendingDns = false;
-	if (info.error() == QHostInfo::NoError) {
-		bValidDomain = true;
-		qlError->setText(QString());
-		qwpNew->setComplete(true);
-		next();
-	} else {
-		bValidDomain = false;
-		qlError->setText(tr("Unable to resolve domain."));
-		qwpNew->setComplete(false);
-	}
 }
 
 static int add_ext(X509 * crt, int nid, char *value) {

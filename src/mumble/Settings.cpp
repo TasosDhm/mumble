@@ -384,9 +384,11 @@ Settings::Settings() {
 	rmRecordingMode = RecordingMixdown;
 	iRecordingFormat = 0;
 
-	// Codec kill-switch
+	// Special configuration options not exposed to UI
 	bDisableCELT = false;
-
+	disablePublicList = false;
+	disableConnectDialogEditing = false;
+	
 	// Config updates
 	uiUpdateCounter = 0;
 
@@ -690,8 +692,11 @@ void Settings::load(QSettings* settings_ptr) {
 	LOADENUM(rmRecordingMode, "recording/mode");
 	SAVELOAD(iRecordingFormat, "recording/format");
 
-	// Codec kill-switch
+	// Special configuration options not exposed to UI
 	SAVELOAD(bDisableCELT, "audio/disablecelt");
+	SAVELOAD(disablePublicList, "ui/disablepubliclist");
+	SAVELOAD(disableConnectDialogEditing, "ui/disableconnectdialogediting");
+	
 
 	// LCD
 	SAVELOAD(iLCDUserViewMinColWidth, "lcd/userview/mincolwidth");
@@ -977,8 +982,10 @@ void Settings::save() {
 	SAVELOAD(rmRecordingMode, "recording/mode");
 	SAVELOAD(iRecordingFormat, "recording/format");
 
-	// Codec kill-switch
+	// Special configuration options not exposed to UI
 	SAVELOAD(bDisableCELT, "audio/disablecelt");
+	SAVELOAD(disablePublicList, "ui/disablepubliclist");
+	SAVELOAD(disableConnectDialogEditing, "ui/disableconnectdialogediting");
 
 	// LCD
 	SAVELOAD(iLCDUserViewMinColWidth, "lcd/userview/mincolwidth");
