@@ -290,17 +290,3 @@ message RequestBlob {
 	repeated uint32 session_comment = 2;
 	repeated uint32 channel_description = 3;
 }
-
-message ServerConfig {
-	optional uint32 max_bandwidth = 1;
-	optional string welcome_text = 2;
-	optional bool allow_html = 3;
-	optional uint32 message_length = 4;
-	optional uint32 image_message_length = 5;
-}
-
-message SuggestConfig {
-	optional uint32 version = 1;
-	optional bool positional = 2;
-	optional bool push_to_talk = 3;
-}
