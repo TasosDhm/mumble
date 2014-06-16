@@ -51,6 +51,15 @@ message Reject {
 	optional string reason = 2;
 }
 
+message ServerSync {
+	optional uint32 session = 1;
+	optional uint32 max_bandwidth = 2;
+	optional string welcome_text = 3;
+	optional uint64 permissions = 4;
+	optional string emoticon_names = 5;
+	optional string emoticon_images = 6;
+}
+
 message ChannelRemove {
 	required uint32 channel_id = 1;
 }
@@ -266,6 +275,12 @@ message UserStats {
 	optional bool opus = 19 [default = false];
 }
 
+message RequestBlob {
+	repeated uint32 session_texture = 1;
+	repeated uint32 session_comment = 2;
+	repeated uint32 channel_description = 3;
+}
+
 message ServerConfig {
 	optional uint32 max_bandwidth = 1;
 	optional string welcome_text = 2;
@@ -276,17 +291,8 @@ message ServerConfig {
 	optional string emoticon_images = 7;
 }
 
-message ServerSync {
-	optional uint32 session = 1;
-	optional uint32 max_bandwidth = 2;
-	optional string welcome_text = 3;
-	optional uint64 permissions = 4;
-	optional string emoticon_names = 5;
-	optional string emoticon_images = 6;
-}
-
-message RequestBlob {
-	repeated uint32 session_texture = 1;
-	repeated uint32 session_comment = 2;
-	repeated uint32 channel_description = 3;
+message SuggestConfig {
+	optional uint32 version = 1;
+	optional bool positional = 2;
+	optional bool push_to_talk = 3;
 }
