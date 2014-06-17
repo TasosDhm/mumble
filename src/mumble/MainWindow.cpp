@@ -1533,6 +1533,8 @@ void MainWindow::sendChatbarMessage(QString qsText) {
 	ClientUser *p = pmModel->getUser(qtvUsers->currentIndex());
 	Channel *c = pmModel->getChannel(qtvUsers->currentIndex());
 
+	std::string plainText = qsText.toUtf8().constData();
+
 #if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
 	qsText = qsText.toHtmlEscaped();
 #else
@@ -1545,8 +1547,15 @@ void MainWindow::sendChatbarMessage(QString qsText) {
 		if (!g.s.bChatBarUseSelection || c == NULL) // If no channel selected fallback to current one
 			c = ClientUser::get(g.uiSession)->cChannel;
 
-		g.sh->sendChannelTextMessage(c->iId, qsText, false);
-		g.l->log(Log::TextMessage, tr("To %1: %2").arg(Log::formatChannel(c), qsText), tr("Message to channel %1").arg(c->qsName), true);
+		if(plainText == "/clear") {
+
+			qteLog->clear();
+
+		}
+		else {
+			g.sh->sendChannelTextMessage(c->iId, qsText, false);
+			g.l->log(Log::TextMessage, tr("To %1: %2").arg(Log::formatChannel(c), qsText), tr("Message to channel %1").arg(c->qsName), true);
+		}
 	} else {
 		// User message
 		g.sh->sendUserTextMessage(p->uiSession, qsText);
