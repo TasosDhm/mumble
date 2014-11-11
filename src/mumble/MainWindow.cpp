@@ -1547,7 +1547,7 @@ void MainWindow::sendChatbarMessage(QString qsText) {
 		if (!g.s.bChatBarUseSelection || c == NULL) // If no channel selected fallback to current one
 			c = ClientUser::get(g.uiSession)->cChannel;
 
-		if(plainText == "/clear") {
+		if(plainText == "/c") {
 
 			qteLog->clear();
 
