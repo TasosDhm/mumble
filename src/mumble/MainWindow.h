@@ -33,7 +33,7 @@
 #define MUMBLE_MUMBLE_MAINWINDOW_H_
 
 #include <QtCore/QtGlobal>
-#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
+#if QT_VERSION >= 0x050000
 # include <QtCore/QPointer>
 # include <QtWidgets/QMainWindow>
 # include <QtWidgets/QSystemTrayIcon>
@@ -116,7 +116,7 @@ class MainWindow : public QMainWindow, public MessageHandler, public Ui::MainWin
 		bool bSuppressAskOnQuit;
 		bool bAutoUnmute;
 
-#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
+#if QT_VERSION >= 0x050000
 		QPointer<Channel> cContextChannel;
 		QPointer<ClientUser> cuContextUser;
 #else
@@ -138,8 +138,11 @@ class MainWindow : public QMainWindow, public MessageHandler, public Ui::MainWin
 		void openTextMessageDialog(ClientUser *p);
 
 #ifdef Q_OS_WIN
-		Timer tInactive;
-		bool winEvent(MSG *, long *);
+#if QT_VERSION >= 0x050000
+		bool nativeEvent(const QByteArray &eventType, void *message, long *result) Q_DECL_OVERRIDE;
+#else
+		bool winEvent(MSG *, long *) Q_DECL_OVERRIDE;
+#endif
 		unsigned int uiNewHardware;
 #endif
 	protected:
@@ -161,12 +164,13 @@ class MainWindow : public QMainWindow, public MessageHandler, public Ui::MainWin
 
 		void createActions();
 		void setupGui();
-		void customEvent(QEvent *evt);
+		void customEvent(QEvent *evt) Q_DECL_OVERRIDE;
 		void findDesiredChannel();
 		void setupView(bool toggle_minimize = true);
-		virtual void closeEvent(QCloseEvent *e);
-		virtual void hideEvent(QHideEvent *e);
-		virtual void showEvent(QShowEvent *e);
+		void closeEvent(QCloseEvent *e) Q_DECL_OVERRIDE;
+		void hideEvent(QHideEvent *e) Q_DECL_OVERRIDE;
+		void showEvent(QShowEvent *e) Q_DECL_OVERRIDE;
+		void changeEvent(QEvent* event) Q_DECL_OVERRIDE;
 
 		bool handleSpecialContextMenu(const QUrl &url, const QPoint &pos_, bool focus = false);
 		Channel* getContextMenuChannel();
@@ -277,7 +281,7 @@ class MainWindow : public QMainWindow, public MessageHandler, public Ui::MainWin
 
 	public:
 		MainWindow(QWidget *parent);
-		~MainWindow();
+		~MainWindow() Q_DECL_OVERRIDE;
 
 		// From msgHandler. Implementation in Messages.cpp
 #define MUMBLE_MH_MSG(x) void msg##x(const MumbleProto:: x &);

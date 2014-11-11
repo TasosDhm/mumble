@@ -34,7 +34,7 @@
 
 #include <QtCore/QtGlobal>
 #include <QtCore/QObject>
-#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
+#if QT_VERSION >= 0x050000
 # include <QtWidgets/QWidget> 
 #else 
 # include <QtGui/QWidget>
@@ -70,7 +70,7 @@ class ConfigWidget : public QWidget {
 
 typedef ConfigWidget *(*ConfigWidgetNew)(Settings &st);
 
-class ConfigRegistrar {
+class ConfigRegistrar Q_DECL_FINAL {
 		friend class ConfigDialog;
 		friend class ConfigDialogMac;
 	private:

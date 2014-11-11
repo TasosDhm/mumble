@@ -87,7 +87,11 @@ QString OSInfo::getMacHash(const QList<QHostAddress> &qlBind) {
 
 QString OSInfo::getOS() {
 #if defined(Q_OS_WIN)
+# if defined(Q_OS_WIN64)
+	return QLatin1String("WinX64");
+# else
 	return QLatin1String("Win");
+# endif
 #elif defined(Q_OS_MAC)
 	return QLatin1String("OSX");
 #else
@@ -204,6 +208,13 @@ QString OSInfo::getOSDisplayableVersion() {
 				osdispver = QLatin1String("Windows 8.1");
 			} else {
 				osdispver = QLatin1String("Windows Server 2012 R2");
+			}
+		}
+		else if (ovi.dwMinorVersion == 4) {
+			if (ovi.wProductType == VER_NT_WORKSTATION) {
+				osdispver = QLatin1String("Windows 10");
+			} else {
+				osdispver = QLatin1String("Windows 10 Server");
 			}
 		}
 

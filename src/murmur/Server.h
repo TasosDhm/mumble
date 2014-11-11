@@ -143,6 +143,7 @@ class Server : public QThread {
 		QString qsEmoticonNames;
 		QString qsEmoticonImages;
 		bool bCertRequired;
+		bool bForceExternalAuth;
 
 		QString qsRegName;
 		QString qsRegPassword;

@@ -64,14 +64,18 @@ UserEdit::UserEdit(const MumbleProto::UserList &userList, QWidget *parent)
 	qtvUserList->setFocus();
 	qtvUserList->setContextMenuPolicy(Qt::CustomContextMenu);
 
-#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
+#if QT_VERSION >= 0x050000
 	qtvUserList->header()->setSectionResizeMode(UserListModel::COL_NICK, QHeaderView::Stretch);
-	qtvUserList->header()->setSectionResizeMode(UserListModel::COL_INACTIVEDAYS, QHeaderView::ResizeToContents);
-	qtvUserList->header()->setSectionResizeMode(UserListModel::COL_LASTCHANNEL, QHeaderView::Stretch);
+	if (!m_model->isLegacy()) {
+		qtvUserList->header()->setSectionResizeMode(UserListModel::COL_INACTIVEDAYS, QHeaderView::ResizeToContents);
+		qtvUserList->header()->setSectionResizeMode(UserListModel::COL_LASTCHANNEL, QHeaderView::Stretch);
+	}
 #else
 	qtvUserList->header()->setResizeMode(UserListModel::COL_NICK, QHeaderView::Stretch);
-	qtvUserList->header()->setResizeMode(UserListModel::COL_INACTIVEDAYS, QHeaderView::ResizeToContents);
-	qtvUserList->header()->setResizeMode(UserListModel::COL_LASTCHANNEL, QHeaderView::Stretch);
+	if (!m_model->isLegacy()) {
+		qtvUserList->header()->setResizeMode(UserListModel::COL_INACTIVEDAYS, QHeaderView::ResizeToContents);
+		qtvUserList->header()->setResizeMode(UserListModel::COL_LASTCHANNEL, QHeaderView::Stretch);
+	}
 #endif
 
 	if (m_model->isLegacy()) {

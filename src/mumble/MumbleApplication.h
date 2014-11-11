@@ -1,5 +1,4 @@
 /* Copyright (C) 2005-2011, Thorvald Natvig <thorvald@natvig.com>
-   Copyright (C) 2008, Andreas Messer <andi@bupfen.de>
 
    All rights reserved.
 
@@ -29,66 +28,38 @@
    SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef MUMBLE_MUMBLE_POSITIONALSOUND_H_
-#define MUMBLE_MUMBLE_POSITIONALSOUND_H_
+#ifndef MUMBLE_MUMBLE_MUMBLEAPPLICATION_H
+#define MUMBLE_MUMBLE_MUMBLEAPPLICATION_H
 
-#include "ConfigDialog.h"
-#include "Global.h"
+#include <QApplication>
+#include <QUrl>
 
-#include "ui_PositionalSound.h"
-
-class Settings;
-
-class PlotWidget : public QWidget {
-	private:
-		Q_OBJECT
-		Q_DISABLE_COPY(PlotWidget)
-	protected:
-		const QList<float> &xdata;
-		const QList<float> &ydata;
-		void paintEvent(QPaintEvent*);
-	public:
-		PlotWidget(QWidget *parent, const QList<float> &x, const QList<float> &y);
-		int heightForWidth(int) const;
-};
-
-class PositionalSoundConfig : public ConfigWidget, public Ui::PositionalSoundConfig {
-	private:
-		Q_OBJECT
-		Q_DISABLE_COPY(PositionalSoundConfig)
-	protected:
-		QList<float> xdata;
-		QList<float> ydata;
-
-		PlotWidget* plot;
-	public:
-		PositionalSoundConfig(Settings &st);
-		~PositionalSoundConfig();
-		virtual QString title() const;
-		virtual QIcon icon() const;
-	public slots:
-		void save() const;
-		void load(const Settings &r);
-		bool expert(bool);
-
-		void on_qcbEnable_stateChanged(int);
-		void on_qcbModel_currentIndexChanged(int);
-		void on_qdsbDistance_valueChanged(double);
-		void on_qdsbPreGain_valueChanged(double);
-		void on_qdsbMaxAtt_valueChanged(double);
-
-		void update();
-};
-
-class PositionalSound {
-	public:
-		static float todB(float ratio);
-		static float toRatio(float dB);
-		static float ModelConstant(float pregain);
-		static float ModelLinear(float pregain, float maxatt, float distance, float d);
-		static float calcdB(float d);
-};
-
+/**
+ * @brief Implements custom system shutdown behavior as well as event filtering.
+ */
+#if QT_VERSION >= 0x050000 && defined(Q_OS_WIN)
+class MumbleApplication : public QApplication, public QAbstractNativeEventFilter {
 #else
-class PositionalSoundConfig;
+class MumbleApplication : public QApplication {
 #endif
+		Q_OBJECT
+	public:
+		MumbleApplication(int &pargc, char **pargv);
+		
+		bool event(QEvent *e) Q_DECL_OVERRIDE;
+#ifdef Q_OS_WIN
+# if QT_VERSION >= 0x050000
+		bool MumbleApplication::nativeEventFilter(const QByteArray &eventType, void *message, long *result) Q_DECL_OVERRIDE;
+# else
+		bool winEventFilter(MSG *msg, long *result) Q_DECL_OVERRIDE;
+# endif
+#endif
+		
+		QUrl quLaunchURL;
+		
+	public slots:
+		/// Saves state and suppresses ask on quit before system shutdown. 
+		void onCommitDataRequest(QSessionManager&);
+};
+
+#endif // MUMBLE_MUMBLE_MUMBLEAPPLICATION_H

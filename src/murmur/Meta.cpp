@@ -73,6 +73,7 @@ MetaParams::MetaParams() {
 	bBonjour = true;
 	bAllowPing = true;
 	bCertRequired = false;
+	bForceExternalAuth = false;
 
 	iBanTries = 10;
 	iBanTimeframe = 120;
@@ -126,8 +127,8 @@ void MetaParams::read(QString fname) {
 		QStringList datapaths;
 
 #if defined(Q_OS_WIN)
-#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
-		datapaths << QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation);
+#if QT_VERSION >= 0x050000
+		datapaths << QStandardPaths::writableLocation(QStandardPaths::DataLocation);
 #else
 		datapaths << QDesktopServices::storageLocation(QDesktopServices::DataLocation);
 #endif
@@ -273,6 +274,7 @@ void MetaParams::read(QString fname) {
 	qsEmoticonNames = typeCheckedFromSettings("emoticonnames", qsEmoticonNames);
 	qsEmoticonImages = typeCheckedFromSettings("emoticonimages", qsEmoticonImages);
 	bCertRequired = typeCheckedFromSettings("certrequired", bCertRequired);
+	bForceExternalAuth = typeCheckedFromSettings("forceExternalAuth", bForceExternalAuth);
 
 	qsDatabase = typeCheckedFromSettings("database", qsDatabase);
 
@@ -480,6 +482,7 @@ void MetaParams::read(QString fname) {
 	qmConfig.insert(QLatin1String("username"),qrUserName.pattern());
 	qmConfig.insert(QLatin1String("channelname"),qrChannelName.pattern());
 	qmConfig.insert(QLatin1String("certrequired"), bCertRequired ? QLatin1String("true") : QLatin1String("false"));
+	qmConfig.insert(QLatin1String("forceExternalAuth"), bForceExternalAuth ? QLatin1String("true") : QLatin1String("false"));
 	qmConfig.insert(QLatin1String("suggestversion"), qvSuggestVersion.isNull() ? QString() : qvSuggestVersion.toString());
 	qmConfig.insert(QLatin1String("suggestpositional"), qvSuggestPositional.isNull() ? QString() : qvSuggestPositional.toString());
 	qmConfig.insert(QLatin1String("suggestpushtotalk"), qvSuggestPushToTalk.isNull() ? QString() : qvSuggestPushToTalk.toString());

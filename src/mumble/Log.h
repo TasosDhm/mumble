@@ -48,13 +48,13 @@ class LogConfig : public ConfigWidget, public Ui::LogConfig {
 	public:
 		enum Column { ColMessage, ColConsole, ColNotification, ColTTS, ColStaticSound, ColStaticSoundPath };
 		LogConfig(Settings &st);
-		virtual QString title() const;
-		virtual QIcon icon() const;
+		QString title() const Q_DECL_OVERRIDE;
+		QIcon icon() const Q_DECL_OVERRIDE;
 	public slots:
-		void accept() const;
-		virtual void save() const;
-		virtual void load(const Settings &);
-		virtual bool expert(bool);
+		void accept() const Q_DECL_OVERRIDE;
+		void save() const Q_DECL_OVERRIDE;
+		void load(const Settings &) Q_DECL_OVERRIDE;
+		bool expert(bool) Q_DECL_OVERRIDE;
 
 		void on_qtwMessages_itemChanged(QTreeWidgetItem*, int);
 		void on_qtwMessages_itemClicked(QTreeWidgetItem*, int);
@@ -71,10 +71,14 @@ class Log : public QObject {
 		Q_OBJECT
 		Q_DISABLE_COPY(Log)
 	public:
-		enum MsgType { DebugInfo, CriticalError, Warning, Information, ServerConnected, ServerDisconnected, UserJoin, UserLeave, Recording, YouKicked, UserKicked, SelfMute, OtherSelfMute, YouMuted, YouMutedOther, OtherMutedOther, ChannelJoin, ChannelLeave, PermissionDenied, TextMessage };
+		enum MsgType { DebugInfo, CriticalError, Warning, Information, ServerConnected, ServerDisconnected, UserJoin, UserLeave, Recording, YouKicked, UserKicked, SelfMute, OtherSelfMute, YouMuted, YouMutedOther, OtherMutedOther, ChannelJoin, ChannelLeave, PermissionDenied, TextMessage, SelfUnmute, SelfDeaf, SelfUndeaf };
 		enum LogColorType { Time, Server, Privilege, Source, Target };
 		static const MsgType firstMsgType = DebugInfo;
-		static const MsgType lastMsgType = TextMessage;
+		static const MsgType lastMsgType = SelfUndeaf;
+		
+		// Display order in settingsscreen, allows to insert new events without breaking config-compatibility with older versions.
+		static const MsgType msgOrder[];
+	
 	protected:
 		QHash<MsgType, int> qmIgnore;
 		static const char *msgNames[];
@@ -106,7 +110,7 @@ class LogDocument : public QTextDocument {
 		Q_DISABLE_COPY(LogDocument)
 	public:
 		LogDocument(QObject *p = NULL);
-		virtual QVariant loadResource(int, const QUrl &);
+		QVariant loadResource(int, const QUrl &) Q_DECL_OVERRIDE;
 		void setAllowHTTPResources(bool allowHttpResources);
 		void setOnlyLoadDataURLs(bool onlyLoadDataURLs);
 		bool isValid();

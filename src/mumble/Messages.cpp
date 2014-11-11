@@ -119,7 +119,7 @@ void MainWindow::msgServerSync(const MumbleProto::ServerSync &msg) {
 	g.sh->sendPing(); // Send initial ping to establish UDP connection
 
 	g.uiSession = msg.session();
-	g.pPermissions = static_cast<ChanACL::Permissions>(msg.permissions());
+	g.pPermissions = ChanACL::Permissions(static_cast<unsigned int>(msg.permissions()));
 	g.l->clearIgnore();
 	g.l->log(Log::Information, tr("Welcome message: %1").arg(u8(msg.welcome_text())));
 	pmModel->ensureSelfVisible();
@@ -346,15 +346,51 @@ void MainWindow::msgUserState(const MumbleProto::UserState &msg) {
 		}
 	}
 
-	if (msg.has_deaf() || msg.has_mute() || msg.has_suppress() || msg.has_priority_speaker()) {
+	if (msg.has_priority_speaker()) {
+		if (pSelf && ((pDst->cChannel == pSelf->cChannel) || (pSrc == pSelf))) {
+			if ((pSrc == pDst) && (pSrc == pSelf)) {
+				if (pDst->bPrioritySpeaker) {
+					g.l->log(Log::YouMuted, tr("You revoked your priority speaker status."));
+				} else  {
+					g.l->log(Log::YouMuted, tr("You assumed priority speaker status."));
+				}
+			} else if ((pSrc != pSelf) && (pDst == pSelf) ) {
+				if (pDst->bPrioritySpeaker) {
+					g.l->log(Log::YouMutedOther, tr("%1 revoked your priority speaker status.").arg(Log::formatClientUser(pSrc, Log::Source)));
+				} else  {
+					g.l->log(Log::YouMutedOther, tr("%1 gave you priority speaker status.").arg(Log::formatClientUser(pSrc, Log::Source)));
+				}
+			} else if ((pSrc == pSelf) && (pSrc != pDst)) {
+				if (pDst->bPrioritySpeaker) {
+					g.l->log(Log::YouMutedOther, tr("You revoked priority speaker status for %1.").arg(Log::formatClientUser(pDst, Log::Target)));
+				} else  {
+					g.l->log(Log::YouMutedOther, tr("You gave priority speaker status to %1.").arg(Log::formatClientUser(pDst, Log::Target)));
+				}
+			} else if ((pSrc == pDst) && (pSrc != pSelf)) {
+				if (pDst->bPrioritySpeaker) {
+					g.l->log(Log::OtherMutedOther, tr("%1 revoked own priority speaker status.").arg(Log::formatClientUser(pSrc, Log::Source)));
+				} else {
+					g.l->log(Log::OtherMutedOther, tr("%1 assumed priority speaker status.").arg(Log::formatClientUser(pSrc, Log::Source)));
+				}
+			} else if ((pSrc != pSelf) && (pDst != pSelf)) {
+				if (pDst->bPrioritySpeaker) {
+					g.l->log(Log::OtherMutedOther, tr("%1 revoked priority speaker status for %2.").arg(Log::formatClientUser(pSrc, Log::Source), Log::formatClientUser(pDst, Log::Target)));
+				} else if (!pDst->bPrioritySpeaker) {
+					g.l->log(Log::OtherMutedOther, tr("%1 gave priority speaker status to %2.").arg(Log::formatClientUser(pSrc, Log::Source), Log::formatClientUser(pDst, Log::Target)));
+				}
+			}
+		}
+
+		pDst->setPrioritySpeaker(msg.priority_speaker());
+	}
+
+	if (msg.has_deaf() || msg.has_mute() || msg.has_suppress()) {
 		if (msg.has_mute())
 			pDst->setMute(msg.mute());
 		if (msg.has_deaf())
 			pDst->setDeaf(msg.deaf());
 		if (msg.has_suppress())
 			pDst->setSuppress(msg.suppress());
-		if (msg.has_priority_speaker())
-			pDst->setPrioritySpeaker(msg.priority_speaker());
 
 		if (pSelf && ((pDst->cChannel == pSelf->cChannel) || (pSrc == pSelf))) {
 			if (pDst == pSelf) {
@@ -465,6 +501,8 @@ void MainWindow::msgUserState(const MumbleProto::UserState &msg) {
 						g.l->log(Log::ChannelLeave, tr("%1 moved to %2.").arg(Log::formatClientUser(pDst, Log::Target)).arg(Log::formatChannel(c)));
 					else
 						g.l->log(Log::ChannelLeave, tr("%1 moved to %2 by %3.").arg(Log::formatClientUser(pDst, Log::Target)).arg(Log::formatChannel(c)).arg(Log::formatClientUser(pSrc, Log::Source)));
+				} else if (pSrc == pSelf) {
+					g.l->log(Log::ChannelJoin, tr("You moved %1 to %2.").arg(Log::formatClientUser(pDst, Log::Target)).arg(Log::formatChannel(c)));
 				}
 			}
 

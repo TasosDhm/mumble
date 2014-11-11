@@ -63,8 +63,11 @@ class OverlayClient : public QObject {
 		QGraphicsPixmapItem *qgpiFPS;
 		QGraphicsPixmapItem *qgpiTime;
 
-		/// The process ID of the processing displaying an overlay.
+		/// The process ID of the process this OverlayClient is connected to.
 		quint64 uiPid;
+		/// The path to the executable of the process that this OverlayClient is connected to.
+		QString qsExecutablePath;
+
 		QGraphicsScene qgs;
 		OverlayUserGroup ougUsers;
 
@@ -78,7 +81,7 @@ class OverlayClient : public QObject {
 		void setupRender();
 		void setupScene(bool show);
 
-		bool eventFilter(QObject *, QEvent *);
+		bool eventFilter(QObject *, QEvent *) Q_DECL_OVERRIDE;
 
 		void readyReadMsgInit(unsigned int length);
 
@@ -93,7 +96,7 @@ class OverlayClient : public QObject {
 		int iMouseX, iMouseY;
 
 		OverlayClient(QLocalSocket *, QObject *);
-		~OverlayClient();
+		~OverlayClient() Q_DECL_OVERRIDE;
 		void reset();
 	public slots:
 		void showGui();

@@ -718,13 +718,12 @@ void AudioInput::encodeAudioFrame() {
 		return;
 
 	sum=1.0f;
-	for (i=0;i<iFrameSize;i++)
-		sum += static_cast<float>(psMic[i] * psMic[i]);
-	dPeakMic = qMax(20.0f*log10f(sqrtf(sum / static_cast<float>(iFrameSize)) / 32768.0f), -96.0f);
-
 	max = 1;
-	for (i=0;i<iFrameSize;i++)
-		max = static_cast<short>(abs(psMic[i]) > max ? abs(psMic[i]) : max);
+	for (i=0;i<iFrameSize;i++) {
+		sum += static_cast<float>(psMic[i] * psMic[i]);
+		max = std::max(static_cast<short>(abs(psMic[i])), max);
+	}
+	dPeakMic = qMax(20.0f*log10f(sqrtf(sum / static_cast<float>(iFrameSize)) / 32768.0f), -96.0f);
 	dMaxMic = max;
 
 	if (psSpeaker && (iEchoChannels > 0)) {
@@ -868,16 +867,23 @@ void AudioInput::encodeAudioFrame() {
 		if (!bIsSpeech || iBufferedFrames >= iAudioFrames) {
 			if (iBufferedFrames < iAudioFrames) {
 				// Stuff frame to framesize if speech ends and we don't have enough audio
+				// this way we are guaranteed to have a valid framecount and won't cause
+				// a codec configuration switch by suddenly using a wildly different
+				// framecount per packet.
 				const size_t missingFrames = iAudioFrames - iBufferedFrames;
 				opusBuffer.insert(opusBuffer.end(), iFrameSize * missingFrames, 0);
 				iBufferedFrames += missingFrames;
+				iFrameCounter += missingFrames;
 			}
+			
+			Q_ASSERT(iBufferedFrames == iAudioFrames);
 
 			len = encodeOpusFrame(&opusBuffer[0], iBufferedFrames * iFrameSize, buffer);
 			opusBuffer.clear();
 			if (len <= 0) {
 				iBitrate = 0;
 				qWarning() << "encodeOpusFrame failed" << iBufferedFrames << iFrameSize << len;
+				iBufferedFrames = 0; // These are lost. Make sure not to mess up our sequence counter next flushCheck.
 				return;
 			}
 			encoded = true;

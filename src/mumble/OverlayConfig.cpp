@@ -45,12 +45,14 @@
 #include "MainWindow.h"
 #include "GlobalShortcut.h"
 
+#include "../../overlay/overlay_blacklist.h"
+
 static ConfigWidget *OverlayConfigDialogNew(Settings &st) {
 	return new OverlayConfig(st);
 }
 
 // Hide overlay config for Mac OS X universal builds
-#if !defined(USE_MAC_UNIVERSAL)
+#if !defined(USE_MAC_UNIVERSAL) && !defined(Q_OS_WIN64)
 static ConfigRegistrar registrar(6000, OverlayConfigDialogNew);
 #endif
 
@@ -239,7 +241,7 @@ OverlayAppInfo OverlayConfig::applicationInfoForId(const QString &identifier) {
 #elif defined(Q_OS_WIN)
 	HICON icon = ExtractIcon(qWinAppInst(), identifier.toStdWString().c_str(), 0);
 	if (icon) {
-#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
+#if QT_VERSION >= 0x050000
 		extern QPixmap qt_pixmapFromWinHICON(HICON icon);
 		qiAppIcon = QIcon(qt_pixmapFromWinHICON(icon));
 #else
@@ -305,7 +307,25 @@ void OverlayConfig::load(const Settings &r) {
 		qlwiApplication->setData(Qt::UserRole, QVariant(str));
 	}
 
+	QStringList builtinBlacklist;
+#ifdef Q_OS_WIN
+	int i = 0;
+	while (overlayBlacklist[i]) {
+		QString str = QLatin1String(overlayBlacklist[i]);
+		builtinBlacklist << str;
+		++i;
+	}
+#endif
+	foreach (QString str, builtinBlacklist) {
+		OverlayAppInfo oai = applicationInfoForId(str);
+		QListWidgetItem *qlwiApplication = new QListWidgetItem(oai.qiIcon, oai.qsDisplayName, qlwBlacklist);
+		qlwiApplication->setFlags(qlwiApplication->flags() & ~Qt::ItemIsEnabled);
+	}
+
 	foreach(QString str, s.os.qslBlacklist) {
+		if (builtinBlacklist.contains(str)) {
+			continue;
+		}
 		OverlayAppInfo oai = applicationInfoForId(str);
 		QListWidgetItem *qlwiApplication = new QListWidgetItem(oai.qiIcon, oai.qsDisplayName, qlwBlacklist);
 		qlwiApplication->setData(Qt::UserRole, QVariant(str));
@@ -345,7 +365,12 @@ void OverlayConfig::save() const {
 	s.os.qslBlacklist.clear();
 	for (int i=0;i<qlwBlacklist->count();++i) {
 		QVariant qvUserData = qlwBlacklist->item(i)->data(Qt::UserRole);
-		s.os.qslBlacklist << qvUserData.toString();
+		QString str = qvUserData.toString();
+		// Built-in blacklist entries have no user data set.
+		// Skip them.
+		if (!str.isEmpty()) {
+			s.os.qslBlacklist << qvUserData.toString();
+		}
 	}
 
 	s.os.qslWhitelist.clear();

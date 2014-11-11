@@ -28,9 +28,14 @@
 
 #include <QtCore/QtCore>
 #include <QtGui/QtGui>
-#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
+#if QT_VERSION >= 0x050000
+# include "Qt4Compat.h"
 # include <QtWidgets/QtWidgets>
+#else
+# define Q_DECL_OVERRIDE // Not available on Qt4
+# define Q_DECL_FINAL
 #endif
+
 #include <QtSvg/QtSvg>
 #ifdef USE_DBUS
 #include <QtDBus/QtDBus>
@@ -101,6 +106,7 @@
 #include <delayimp.h>
 #include <shlobj.h>
 #include <tlhelp32.h>
+#include <psapi.h>
 #ifndef Q_CC_INTEL
 #include <math.h>
 #define lroundf(x) ( static_cast<long int>( (x) + ((x) >= 0.0f ? 0.5f : -0.5f) ) )

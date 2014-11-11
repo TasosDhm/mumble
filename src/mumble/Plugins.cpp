@@ -83,7 +83,7 @@ PluginFetchMeta::PluginFetchMeta(const QString &hash, const QString &path) : has
 PluginConfig::PluginConfig(Settings &st) : ConfigWidget(st) {
 	setupUi(this);
 
-#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
+#if QT_VERSION >= 0x050000
 	qtwPlugins->header()->setSectionResizeMode(0, QHeaderView::Stretch);
 	qtwPlugins->header()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
 #else
@@ -500,7 +500,11 @@ void Plugins::checkUpdates() {
 	QList<QPair<QString, QString> > queryItems;
 	queryItems << qMakePair(QString::fromUtf8("ver"), QString::fromUtf8(QUrl::toPercentEncoding(QString::fromUtf8(MUMBLE_RELEASE))));
 #if defined(Q_OS_WIN)
+# if defined(Q_OS_WIN64)
+	queryItems << qMakePair(QString::fromUtf8("os"), QString::fromUtf8("WinX64"));
+# else
 	queryItems << qMakePair(QString::fromUtf8("os"), QString::fromUtf8("Win32"));
+# endif
 	queryItems << qMakePair(QString::fromUtf8("abi"), QString::fromUtf8(MUMTEXT(_MSC_VER)));
 #elif defined(Q_OS_MAC)
 # if defined(USE_MAC_UNIVERSAL)
@@ -514,7 +518,7 @@ void Plugins::checkUpdates() {
 
 
 #ifdef QT_NO_DEBUG
-#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
+#if QT_VERSION >= 0x050000
 	QUrlQuery query;
 	query.setQueryItems(queryItems);
 	url.setQuery(query);

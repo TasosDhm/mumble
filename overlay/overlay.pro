@@ -7,6 +7,7 @@ CONFIG -= qt
 CONFIG *= dll shared debug_and_release warn_on
 CONFIG -= embed_manifest_dll
 TARGET = mumble_ol
+RC_FILE = mumble_ol.rc
 SOURCES = lib.cpp d3d9.cpp dxgi.cpp d3d10.cpp d3d11.cpp ods.cpp opengl.cpp HardHook.cpp D11StateBlock.cpp
 HEADERS = lib.h ods.h HardHook.h overlay_blacklist.h D11StateBlock.h
 EFFECTS = overlay.fx
@@ -22,11 +23,10 @@ QMAKE_CXXFLAGS_DEBUG	-= -MDd
 QMAKE_CXXFLAGS_RELEASE	*= -MT
 QMAKE_CXXFLAGS_DEBUG	*= -MTd
 
-INCLUDEPATH *= "$(DXSDK_DIR)Include"
 INCLUDEPATH *= "$$FX11DIR/inc"
 
-LIBS *= -l"$$(DXSDK_DIR)Lib/x86/dxguid" -luuid -lole32 -luser32 -ladvapi32
-LIBS *= "$$(DXSDK_DIR)Lib/x86/*"
+LIBS *= -ldxguid -luuid -lole32 -luser32 -ladvapi32
+LIBS *= -ld3d9 -ld3d10 -ld3d11 -ld3dcompiler -ld3dx9 -ld3dx10 -ld3dx11 -ldxgi
 
 CONFIG(release, debug|release) {
   DESTDIR = ../release

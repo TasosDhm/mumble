@@ -147,7 +147,7 @@ MainWindow::MainWindow(QWidget *p) : QMainWindow(p) {
 
 	qwPTTButtonWidget = NULL;
 
-#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
+#if QT_VERSION < 0x050000
 	cuContextUser = QWeakPointer<ClientUser>();
 	cContextChannel = QWeakPointer<Channel>();
 #endif
@@ -382,11 +382,14 @@ void MainWindow::msgBox(QString msg) {
 }
 
 #ifdef Q_OS_WIN
+#if QT_VERSION >= 0x050000
+bool MainWindow::nativeEvent(const QByteArray &, void *message, long *) {
+	MSG *msg = reinterpret_cast<MSG *>(message);
+#else
 bool MainWindow::winEvent(MSG *msg, long *) {
+#endif
 	if (msg->message == WM_DEVICECHANGE && msg->wParam == DBT_DEVNODES_CHANGED)
 		uiNewHardware++;
-	else if (msg->message == WM_ACTIVATE && msg->wParam == WA_INACTIVE)
-		tInactive.restart();
 
 	return false;
 }
@@ -397,10 +400,10 @@ void MainWindow::closeEvent(QCloseEvent *e) {
 	ServerHandlerPtr sh = g.sh;
 	if (sh && sh->isRunning() && g.s.bAskOnQuit && !bSuppressAskOnQuit) {
 		QMessageBox mb(QMessageBox::Warning, QLatin1String("Mumble"), tr("Mumble is currently connected to a server. Do you want to Close or Minimize it?"), QMessageBox::NoButton, this);
-		mb.addButton(tr("Close"), QMessageBox::YesRole);
+		QPushButton *qpbClose = mb.addButton(tr("Close"), QMessageBox::YesRole);
 		QPushButton *qpbMinimize = mb.addButton(tr("Minimize"), QMessageBox::NoRole);
 		QPushButton *qpbCancel = mb.addButton(tr("Cancel"), QMessageBox::RejectRole);
-		mb.setDefaultButton(qpbCancel);
+		mb.setDefaultButton(qpbClose);
 		mb.setEscapeButton(qpbCancel);
 		mb.exec();
 		if (mb.clickedButton() == qpbMinimize) {
@@ -462,6 +465,15 @@ void MainWindow::showEvent(QShowEvent *e) {
 			QMetaObject::invokeMethod(this, "show", Qt::QueuedConnection);
 #endif
 	QMainWindow::showEvent(e);
+}
+
+void MainWindow::changeEvent(QEvent *event)
+{
+	QWidget::changeEvent(event);
+	if (isMinimized() && g.s.bHideInTray) {
+		// Workaround http://qt-project.org/forums/viewthread/4423/P15/#50676
+		QTimer::singleShot(0, this, SLOT(hide()));
+	}
 }
 
 void MainWindow::updateTrayIcon() {
@@ -657,7 +669,7 @@ void MainWindow::openUrl(const QUrl &url) {
 	minor = 2;
 	patch = 0;
 
-#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
+#if QT_VERSION >= 0x050000
 	QUrlQuery query(url);
 	QString version = query.queryItemValue(QLatin1String("version"));
 #else
@@ -681,7 +693,7 @@ void MainWindow::openUrl(const QUrl &url) {
 	qsDesiredChannel = url.path();
 	QString name;
 
-#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
+#if QT_VERSION >= 0x050000
 	if (query.hasQueryItem(QLatin1String("title")))
 		name = query.queryItemValue(QLatin1String("title"));
 #else
@@ -825,19 +837,17 @@ void MainWindow::setupView(bool toggle_minimize) {
 	}
 
 	Qt::WindowFlags f = Qt::Window;
-	if (!showit && g.s.bHideFrame)
-		f = Qt::Window | Qt::FramelessWindowHint;
-#ifndef Q_OS_MAC
-	else if (!showit)
-		f = Qt::Tool;
-#else
-	f |= Qt::MacWindowToolBarButtonHint | Qt::WindowTitleHint | Qt::WindowSystemMenuHint | Qt::WindowMinMaxButtonsHint | Qt::WindowCloseButtonHint;
-#endif
-
+	if (!showit) {
+		if (g.s.bHideFrame) {
+			f |= Qt::FramelessWindowHint;
+		}
+	}
+	
 	if (g.s.aotbAlwaysOnTop == Settings::OnTopAlways ||
 	        (g.s.bMinimalView && g.s.aotbAlwaysOnTop == Settings::OnTopInMinimal) ||
-	        (!g.s.bMinimalView && g.s.aotbAlwaysOnTop == Settings::OnTopInNormal))
+	        (!g.s.bMinimalView && g.s.aotbAlwaysOnTop == Settings::OnTopInNormal)) {
 		f |= Qt::WindowStaysOnTopHint;
+	}
 
 	if (! graphicsProxyWidget())
 		setWindowFlags(f);
@@ -1535,7 +1545,7 @@ void MainWindow::sendChatbarMessage(QString qsText) {
 
 	std::string plainText = qsText.toUtf8().constData();
 
-#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
+#if QT_VERSION >= 0x050000
 	qsText = qsText.toHtmlEscaped();
 #else
 	qsText = Qt::escape(qsText);
@@ -1991,9 +2001,9 @@ void MainWindow::on_qaAudioMute_triggered() {
 	if (! g.s.bMute && g.s.bDeaf) {
 		g.s.bDeaf = false;
 		qaAudioDeaf->setChecked(false);
-		g.l->log(Log::SelfMute, tr("Unmuted and undeafened."));
+		g.l->log(Log::SelfUndeaf, tr("Unmuted and undeafened."));
 	} else if (! g.s.bMute) {
-		g.l->log(Log::SelfMute, tr("Unmuted."));
+		g.l->log(Log::SelfUnmute, tr("Unmuted."));
 	} else {
 		g.l->log(Log::SelfMute, tr("Muted."));
 	}
@@ -2026,12 +2036,12 @@ void MainWindow::on_qaAudioDeaf_triggered() {
 		bAutoUnmute = true;
 		g.s.bMute = true;
 		qaAudioMute->setChecked(true);
-		g.l->log(Log::SelfMute, tr("Muted and deafened."));
+		g.l->log(Log::SelfDeaf, tr("Muted and deafened."));
 	} else if (g.s.bDeaf) {
-		g.l->log(Log::SelfMute, tr("Deafened."));
+		g.l->log(Log::SelfDeaf, tr("Deafened."));
 		bAutoUnmute = false;
 	} else {
-		g.l->log(Log::SelfMute, tr("Undeafened."));
+		g.l->log(Log::SelfUndeaf, tr("Undeafened."));
 	}
 
 	if (g.sh) {
@@ -2689,38 +2699,15 @@ void MainWindow::on_Icon_messageClicked() {
 }
 
 void MainWindow::on_Icon_activated(QSystemTrayIcon::ActivationReason reason) {
-	// FIXME: Workaround for activated sending both doubleclick and trigger
-	static Timer tDoubleClick;
-	static bool bDoubleClick = false;
-
-	if (reason == QSystemTrayIcon::DoubleClick) {
-		bDoubleClick = true;
-		tDoubleClick.restart();
-	} else if (bDoubleClick && (reason == QSystemTrayIcon::Trigger)) {
-		if (tDoubleClick.elapsed() > 100000UL)
-			bDoubleClick = false;
-		else
-			return;
-	}
-
-	if (reason == QSystemTrayIcon::Trigger) {
-#ifdef Q_OS_WIN
-		if (!isVisible() || isMinimized() || tInactive.elapsed() > 300000UL) {
-#else
-		if (!isVisible() || isMinimized() || !isActiveWindow()) {
-#endif
-			if (isMaximized())
-				showMaximized();
-			else
-				showNormal();
-			activateWindow();
+	switch (reason) {
+		case QSystemTrayIcon::Trigger:
+		case QSystemTrayIcon::DoubleClick:
+		case QSystemTrayIcon::MiddleClick:
+			setWindowState((windowState() & ~Qt::WindowMinimized) | Qt::WindowActive);
+			show();
 			raise();
-		} else {
-			if (g.s.bHideInTray)
-				hide();
-			else
-				showMinimized();
-		}
+			activateWindow();
+		default: break;
 	}
 }
 
@@ -2818,8 +2805,11 @@ void MainWindow::on_qteLog_highlighted(const QUrl &url) {
 
 	if (! url.isValid())
 		QToolTip::hideText();
-	else
-		QToolTip::showText(QCursor::pos(), url.toString(), qteLog, QRect());
+	else {
+		if (qApp->activeWindow() != NULL) {
+			QToolTip::showText(QCursor::pos(), url.toString(), qteLog, QRect());
+		}
+	}
 }
 
 void MainWindow::on_qdwChat_dockLocationChanged(Qt::DockWidgetArea) {
@@ -2861,7 +2851,7 @@ QPair<QByteArray, QImage> MainWindow::openImageFile() {
 	QPair<QByteArray, QImage> retval;
 
 	if (g.s.qsImagePath.isEmpty() || ! QDir::root().exists(g.s.qsImagePath)) {
-#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
+#if QT_VERSION >= 0x050000
 		g.s.qsImagePath = QStandardPaths::writableLocation(QStandardPaths::PicturesLocation);
 #else
 		g.s.qsImagePath = QDesktopServices::storageLocation(QDesktopServices::PicturesLocation);

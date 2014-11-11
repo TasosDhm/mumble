@@ -2,7 +2,7 @@
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
   <?include "Settings.wxi" ?>
 
-  <Product Id="*" Name="$(var.ProductName) $(var.ProductVersion)" Language="!(loc.LANG)" Version="$(var.ProductVersion)" Manufacturer="$(var.ProductManufacturer)" UpgradeCode="B0EEFCC7-8A9c-4471-AB10-CBD35BE3161D">
+  <Product Id="*" Name="$(var.ProductName) $(var.ProductVersion)" Language="!(loc.LANG)" Version="$(var.ProductVersion)" Manufacturer="$(var.ProductManufacturer)" UpgradeCode="$(var.ProductUpgradeCode)">
     <Package Id="*" InstallerVersion="300" Compressed="yes" Languages="0,1028,1029,1030,1031,1033,1034,1036,1040,1041,1043,1044,1045,1046,1049,1053,1055,2052" />
 
     <Property Id='NSISINSTALL'>
@@ -22,7 +22,7 @@
     </UI>
 
     <Property Id='INSTALLDIR'>
-      <ComponentSearch Id='SearchMumbleComponent' Guid='A08F7909-1116-4AC8-9422-051FA1A1BE19' />
+      <ComponentSearch Id='SearchMumbleComponent' Guid='$(var.MumbleExeGuid)' />
     </Property>
 
     <Condition Message='$(var.ProductName) requires at least Windows XP SP2 or Windows Server 2003 SP1'>
@@ -37,9 +37,9 @@
     <UIRef Id="WixUI_ErrorProgressText" />
 
     <Property Id="ALLUSERS" Value="1" />
-    <Property Id="REINSTALLMODE" Value="amus" />
-    <Property Id="ARPURLINFOABOUT" Value="http://mumble.sourceforge.net/" />
-    <Property Id="ARPURLUPDATEINFO" Value="http://mumble.sourceforge.net/" />
+    <Property Id="REINSTALLMODE" Value="amus" /> <!-- See http://msdn.microsoft.com/en-us/library/aa371182(v=vs.85).aspx -->
+    <Property Id="ARPURLINFOABOUT" Value="http://www.mumble.info/" />
+    <Property Id="ARPURLUPDATEINFO" Value="http://www.mumble.info/" />
     <Property Id='ARPPRODUCTICON'>mumble.ico</Property>
 
     <WixVariable Id="WixUILicenseRtf" Value="$(var.SourceDir)\installer\gpl.rtf" />
@@ -47,7 +47,7 @@
     <WixVariable Id="WixUIDialogBmp" Value="$(var.SourceDir)\installer\dlgbmp.bmp" />
 
     <Directory Id="TARGETDIR" Name="SourceDir">
-      <Directory Id="ProgramFilesFolder">
+      <Directory Id="$(var.ArchSpecificProgramFilesFolderId)">
         <Directory Id="INSTALLDIR" Name="$(var.ProductName)">
         </Directory>
 
@@ -73,14 +73,22 @@
     <Icon Id="murmur.ico" SourceFile="$(var.SourceDir)\icons\murmur.ico"/>
 
     <DirectoryRef Id="ApplicationProgramsFolder">
-      <Component Id="ApplicationProgramsFolderRemovalComponent" Guid="0AE1745D-FF86-4D61-BAF3-44248D21D263">
+      <Component Id="ApplicationProgramsFolderRemovalComponent" Guid="$(var.ApplicationProgramsFolderRemovalComponentGuid)">
         <RegistryValue Key="Software\Mumble\Uninstall" Root="HKCU" Value="1" Type="integer" KeyPath="yes" />
         <RemoveFolder Id="ApplicationProgramsFolder" On="uninstall" />
+      </Component>
+
+      <Component Id="UninstallerComponent" Guid="$(var.UninstallerComponentGuid)">
+          <Shortcut Id="UninstallerShortcut"
+            Name="Uninstall"
+            Target="[SystemFolder]msiexec.exe"
+            Arguments="/i [ProductCode]"/>
+          <RegistryValue Key="Software\Mumble\UninstallerShortcut" Root="HKCU" Value="1" Type="integer" KeyPath="yes" />
       </Component>
     </DirectoryRef>
 
     <DirectoryRef Id="AppDataPluginFolder">
-      <Component Id="NSISUninstall" Guid="3116B7EF-CBA3-4E0B-A2C5-0F0608038905">
+      <Component Id="NSISUninstall" Guid="$(var.NSISUninstallComponentGuid)">
         <Condition>NOT Installed AND NSISINSTALL</Condition>
         <RegistryValue Key="Software\Mumble\Uninstall" Root="HKCU" Value="1" Type="integer" KeyPath="yes" />
         <RemoveFile Id="NSISUninstaller" Property="NSISINSTALL" Name="Uninstall.exe" On="install"/>
@@ -126,11 +134,10 @@
       <?ifdef RedistDirVC12 ?>
         <ComponentRef Id="msvcp120.dll" />
         <ComponentRef Id="msvcr120.dll" />
-        <ComponentRef Id="vccorlib120.dll" />
       <?endif ?>
     </ComponentGroup>
 
-    <Feature Id="Mumble" Title="!(loc.MUMBLE_SEC_MUMBLE)" Description="!(loc.DESC_SectionMumble)" Level="1" AllowAdvertise="no" ConfigurableDirectory="INSTALLDIR">
+    <Feature Id="Mumble" Title="!(loc.MUMBLE_SEC_MUMBLE)" Description="!(loc.DESC_SectionMumble)" Level="1" AllowAdvertise="no" ConfigurableDirectory="INSTALLDIR" Display="expand">
       <?ifndef StaticBuild ?>
         <?ifdef SndFileDir ?>
           <ComponentRef Id="libsndfile1.dll" />
@@ -160,10 +167,13 @@
       <?ifdef G15 ?>
         <ComponentRef Id="mumble_g15_helper.exe" />
       <?endif ?>
-      
+
+      <Feature Id="MumbleDesktopShortcutFeature" Title="!(loc.MUMBLE_SEC_DesktopShortcut)" Description="!(loc.DESC_DesktopShortcut)" InstallDefault="followParent" AllowAdvertise="no">
+        <ComponentRef Id="MumbleDesktopShortcutComponent" />
+      </Feature>
     </Feature>
 
-    <Feature Id="Murmur" Title="!(loc.MUMBLE_SEC_MURMUR)" Description="!(loc.DESC_SectionMurmur)" Level="1000" ConfigurableDirectory="INSTALLDIR">
+    <Feature Id="Murmur" Title="!(loc.MUMBLE_SEC_MURMUR)" Description="!(loc.DESC_SectionMurmur)" Level="1000" ConfigurableDirectory="INSTALLDIR" Display="expand">
       <?ifndef StaticBuild ?>
         <?ifdef IceDir ?>
           <ComponentRef Id="bzip2.dll" />
@@ -178,11 +188,17 @@
       <ComponentRef Id="murmur.exe" />
       <ComponentRef Id="murmur.ini" />
       <ComponentRef Id="Murmur.ice" />
+      
+      <Feature Id="MurmurDesktopShortcutFeature" Title="!(loc.MUMBLE_SEC_DesktopShortcut)" Description="!(loc.DESC_DesktopShortcut)"  InstallDefault="followParent" AllowAdvertise="no">
+        <ComponentRef Id="MurmurDesktopShortcutComponent" />
+      </Feature>
+      
     </Feature>
 
     <Feature Id="Libraries" Title="Required Libraries" Display="hidden" AllowAdvertise="no" Absent="disallow" Level="1">
       <ComponentGroupRef Id="LibrariesCommon" />
       <ComponentRef Id="ApplicationProgramsFolderRemovalComponent" />
+      <ComponentRef Id="UninstallerComponent" />
       <ComponentRef Id="NSISUninstall" />
     </Feature>
 

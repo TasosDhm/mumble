@@ -52,7 +52,7 @@ static ConfigRegistrar registrar(4000, LogConfigDialogNew);
 LogConfig::LogConfig(Settings &st) : ConfigWidget(st) {
 	setupUi(this);
 
-#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
+#if QT_VERSION >= 0x050000
 	qtwMessages->header()->setSectionResizeMode(ColMessage, QHeaderView::Stretch);
 	qtwMessages->header()->setSectionResizeMode(ColConsole, QHeaderView::ResizeToContents);
 	qtwMessages->header()->setSectionResizeMode(ColNotification, QHeaderView::ResizeToContents);
@@ -68,11 +68,11 @@ LogConfig::LogConfig(Settings &st) : ConfigWidget(st) {
 
 	QTreeWidgetItem *twi;
 	for (int i = Log::firstMsgType; i <= Log::lastMsgType; ++i) {
-		Log::MsgType t = static_cast<Log::MsgType>(i);
+		Log::MsgType t = Log::msgOrder[i];
 		const QString messageName = g.l->msgName(t);
 
 		twi = new QTreeWidgetItem(qtwMessages);
-		twi->setData(ColMessage, Qt::UserRole, i);
+		twi->setData(ColMessage, Qt::UserRole, static_cast<int>(t));
 		twi->setText(ColMessage, messageName);
 		twi->setCheckState(ColConsole, Qt::Unchecked);
 		twi->setCheckState(ColNotification, Qt::Unchecked);
@@ -103,6 +103,7 @@ QIcon LogConfig::icon() const {
 
 void LogConfig::load(const Settings &r) {
 	QList<QTreeWidgetItem *> qlItems = qtwMessages->findItems(QString(), Qt::MatchContains);
+
 	foreach(QTreeWidgetItem *i, qlItems) {
 		Log::MsgType mt = static_cast<Log::MsgType>(i->data(ColMessage, Qt::UserRole).toInt());
 		Settings::MessageLog ml = static_cast<Settings::MessageLog>(r.qmMessages.value(mt));
@@ -113,6 +114,7 @@ void LogConfig::load(const Settings &r) {
 		i->setCheckState(ColStaticSound, (ml & Settings::LogSoundfile) ? Qt::Checked : Qt::Unchecked);
 		i->setText(ColStaticSoundPath, r.qmMessageSounds.value(mt));
 	}
+	
 	qsbMaxBlocks->setValue(r.iMaxLogBlocks);
 
 	loadSlider(qsVolume, r.iTTSVolume);
@@ -205,6 +207,20 @@ Log::Log(QObject *p) : QObject(p) {
 	qdDate = QDate::currentDate();
 }
 
+// Display order in settingsscreen, allows to insert new events without breaking config-compatibility with older versions
+const Log::MsgType Log::msgOrder[] = {
+	DebugInfo, CriticalError, Warning, Information,
+	ServerConnected, ServerDisconnected,
+	UserJoin, UserLeave,
+	Recording,
+	YouKicked, UserKicked,
+	SelfMute, SelfUnmute, SelfDeaf, SelfUndeaf,
+	OtherSelfMute, YouMuted, YouMutedOther, OtherMutedOther,
+	ChannelJoin, ChannelLeave,
+	PermissionDenied,
+	TextMessage
+};
+
 const char *Log::msgNames[] = {
 	QT_TRANSLATE_NOOP("Log", "Debug"),
 	QT_TRANSLATE_NOOP("Log", "Critical"),
@@ -217,7 +233,7 @@ const char *Log::msgNames[] = {
 	QT_TRANSLATE_NOOP("Log", "User recording state changed"),
 	QT_TRANSLATE_NOOP("Log", "User kicked (you or by you)"),
 	QT_TRANSLATE_NOOP("Log", "User kicked"),
-	QT_TRANSLATE_NOOP("Log", "You self-muted/deafened"),
+	QT_TRANSLATE_NOOP("Log", "You self-muted"),
 	QT_TRANSLATE_NOOP("Log", "Other self-muted/deafened"),
 	QT_TRANSLATE_NOOP("Log", "User muted (you)"),
 	QT_TRANSLATE_NOOP("Log", "User muted (by you)"),
@@ -225,7 +241,10 @@ const char *Log::msgNames[] = {
 	QT_TRANSLATE_NOOP("Log", "User Joined Channel"),
 	QT_TRANSLATE_NOOP("Log", "User Left Channel"),
 	QT_TRANSLATE_NOOP("Log", "Permission Denied"),
-	QT_TRANSLATE_NOOP("Log", "Text Message")
+	QT_TRANSLATE_NOOP("Log", "Text Message"),
+	QT_TRANSLATE_NOOP("Log", "You self-unmuted"),
+	QT_TRANSLATE_NOOP("Log", "You self-deafened"),
+	QT_TRANSLATE_NOOP("Log", "You self-undeafened")
 };
 
 QString Log::msgName(MsgType t) const {
@@ -470,7 +489,7 @@ void Log::log(MsgType mt, const QString &console, const QString &terse, bool own
 		} else if (! g.mw->qteLog->document()->isEmpty()) {
 			tc.insertBlock();
 		}
-		tc.insertHtml(Log::msgColor(QString::fromLatin1("[%1] ").arg(Qt::escape(dt.time().toString(Qt::DefaultLocaleShortDate))), Log::Time));
+		tc.insertHtml(Log::msgColor(QString::fromLatin1("[%1] ").arg(Qt::escape(dt.time().toString())), Log::Time));
 		validHtml(console, true, &tc);
 		tc.movePosition(QTextCursor::End);
 		g.mw->qteLog->setTextCursor(tc);
@@ -488,8 +507,8 @@ void Log::log(MsgType mt, const QString &console, const QString &terse, bool own
 	if ((flags & Settings::LogBalloon) && !(g.mw->isActiveWindow() && g.mw->qdwLog->isVisible()))
 		postNotification(mt, console, plain);
 
-	// Don't make any noise if we are self deafened
-	if (g.s.bDeaf)
+	// Don't make any noise if we are self deafened (Unless it is the sound for activating self deaf)
+	if (g.s.bDeaf && mt != Log::SelfDeaf)
 		return;
 
 	// Message notification with static sounds
@@ -507,7 +526,7 @@ void Log::log(MsgType mt, const QString &console, const QString &terse, bool own
 		return;
 
 	// Apply simplifications to spoken text
-	QRegExp identifyURL(QLatin1String("[a-z-]+://[^ <$]*"),
+	QRegExp identifyURL(QLatin1String("[a-z-]+://[^ <]*"),
 	                    Qt::CaseInsensitive,
 	                    QRegExp::RegExp2);
 

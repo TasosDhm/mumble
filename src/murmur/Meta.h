@@ -69,6 +69,7 @@ public:
 	QString qsEmoticonNames;
 	QString qsEmoticonImages;
 	bool bCertRequired;
+	bool bForceExternalAuth;
 
 	int iBanTries;
 	int iBanTimeframe;
