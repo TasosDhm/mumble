@@ -108,8 +108,6 @@
     <?define MergeModuleDir = "$(env.MumbleMergeModuleDir)" ?>
   <?endif ?>
 
-<<<<<<< HEAD
-=======
   <!-- If the MumbleNoMergeModule env var is set, prefer embedding the .DLLs directly into the installer. -->
   <?ifdef env.MumbleNoMergeModule ?>
     <!-- But, if the MumbleNoEmbedVCRedist env var is set, don't embed them anyway. -->
@@ -126,7 +124,6 @@
     <?endif ?>
   <?endif ?>
 
->>>>>>> upstream/master
   <!-- Environment flags to disable features. Value doesn't matter -->
   <?ifdef env.MumbleSSE ?>
     <?define SSE = true ?>
